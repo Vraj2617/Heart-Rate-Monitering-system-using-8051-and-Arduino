@@ -12,7 +12,7 @@ This project is a Heart Rate Monitoring System implemented using an 8051 microco
 - Displays heart rate data on an LCD screen.
 - Three modes: Relax, Active, and Alert, based on heart rate range.
 
-## Usage:
+## Procedure:
 - Connect the pulse sensor to the Arduino and the Arduino to the 8051 microcontroller.
 - Upload the Arduino code to read analog data from the pulse sensor and transmit it to the 8051 microcontroller.
 - Upload the 8051 microcontroller code to receive data from the Arduino and display it on the LCD screen.
