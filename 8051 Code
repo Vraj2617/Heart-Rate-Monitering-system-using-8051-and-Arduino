@@ -1,0 +1,149 @@
+#include <reg51.h>
+#include<string.h>
+#include<stdlib.h>
+
+#define LCD_DATA P1
+sbit rs = P2^0;
+sbit rw = P2^1;
+sbit en = P2^3;
+
+void lcd_init();
+void lcd_putc(char c);
+void delay(unsigned int time);
+void displayv(unsigned int z);
+char* strrev(char *str);
+void linit();
+void lcmd(char z);
+void display(char message[]);
+unsigned int num;
+void LCD_command(unsigned char command);
+
+void lcd_init() {
+    // Assuming 8-bit mode
+    LCD_DATA = 0x38; // Function set: 8-bit/2-line
+    rs = 0; rw = 0; en = 1;
+    delay(1);
+    en = 0;
+
+    LCD_DATA = 0x0E; // Display ON; Cursor ON
+    rs = 0; rw = 0; en = 1;
+    delay(1);
+    en = 0;
+
+    LCD_DATA = 0x01; // Clear display
+    rs = 0; rw = 0; en = 1;
+    delay(1);
+    en = 0;
+}
+
+void lcd_putc(char c) {
+    LCD_DATA = c;
+    rs = 1; rw = 0; en = 1;
+    delay(1);
+    en = 0;
+}
+
+void delay(unsigned int time) {
+    unsigned int i, j;
+    for(i = 0; i < time; i++)
+        for(j = 0; j < 1275; j++);
+}
+
+void displayv(unsigned int z)//LCD display value
+{  int i,k=0;char message[7];
+while(z)
+{ i=z%10;
+ z/=10;
+ message[k++]=(i+48);
+} message[k]='\0';
+strrev(message);
+display(message);
+}
+void waitfor(unsigned int time)
+{
+unsigned int i, j;
+for(i = 0; i < time; i++)
+		for(j = 0; j < 112; j++);
+}
+
+void lcmd(char z)
+{ P1=z;
+rs=0;
+rw=0;
+en=1;
+en=0;
+waitfor(10);
+}
+void ldsp(char z)
+{ P1=z;
+rs=1;
+rw=0;
+en=1;
+en=0;
+waitfor(20);
+}
+
+char* strrev(char *str)
+{
+	char *p1,*p2,temp;
+
+	if (!str||!*str)
+			return str;
+	for (p1=str,p2=str+strlen(str)-1;p2>p1;++p1,--p2)
+	{
+				temp=*p1;
+				*p1=*p2;
+				*p2=temp;
+	}
+	return str;
+}
+
+void display(char message[])//LCD display string
+{  int i;
+for(i=0;message[i]!='\0';i++) ldsp(message[i]);
+}
+
+void LCD_command(unsigned char command) {
+    rs = 0;      // Select Command Mode
+    rw = 0;      // Write Mode
+    LCD_DATA = command;
+    en = 1;
+    waitfor(100);
+    en = 0;
+    waitfor(100);
+}
+
+
+void main() {
+    unsigned char received_char;
+    lcd_init();
+
+    SCON = 0x50; // UART mode 1, 8-bit data, 1 stop bit, REN enabled
+    TMOD = 0x20; // Timer 1, mode 2(auto-reload)
+    TH1 = 0xFD;  // For baud rate of 9600
+    TR1 = 1;     // Start timer
+
+    while(1) {
+        while(RI == 0); // Wait until character is received
+        RI = 0;         // Clear receive interrupt flag
+        received_char = SBUF; // Read received data
+        if(received_char != 13) { // Ignore carriage return
+            num = received_char;
+					if(num>=80&&num<120){
+					LCD_command(0x01);     // Clear display
+        LCD_command(0x80); 
+            displayv(num);
+						display(" BPM Active");
+					waitfor(500);
+					}
+					else if(num>+120){
+						LCD_command(0x01);     // Clear display
+        LCD_command(0x80); 
+            displayv(num);
+						display(" BPM Sport");
+					waitfor(500);
+					}
+        }
+    }
+}
+
